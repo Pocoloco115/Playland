@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.playland2.feature.menu.MenuScreen
-import com.example.playland2.feature.snake.SnakeScreen
+import com.example.playland2.feature.snake.ui.SnakeScreen
 import com.example.playland2.feature.catchfood.CatchFoodScreen
 import com.example.playland2.feature.flappybird.FlappyBirdScreen
 import com.example.playland2.feature.tictactoe.TicTacToeScreen
