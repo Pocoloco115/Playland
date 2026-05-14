@@ -12,6 +12,7 @@ import com.example.playland2.feature.flappybird.FlappyBirdScreen
 import com.example.playland2.feature.tictactoe.TicTacToeScreen
 
 import androidx.lifecycle.Lifecycle
+import com.example.playland2.feature.catchfood.ui.navigation.CatchFoodNavHost
 
 @Composable
 fun PlaylandNavHost(modifier: Modifier = Modifier) {
@@ -53,12 +54,21 @@ fun PlaylandNavHost(modifier: Modifier = Modifier) {
                 }
             }) 
         }
-        composable<CatchFood> { 
-            CatchFoodScreen(onBack = { 
-                if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
-                    NavDebouncer.process { navController.popBackStack() } 
+        composable<CatchFood> {
+
+            CatchFoodNavHost(
+
+                onBack = {
+
+                    if (navController.currentBackStackEntry?.lifecycle?.currentState == Lifecycle.State.RESUMED) {
+
+                        NavDebouncer.process {
+
+                            navController.popBackStack()
+                        }
+                    }
                 }
-            }) 
+            )
         }
         composable<FlappyBird> { 
             FlappyBirdScreen(onBack = { 
