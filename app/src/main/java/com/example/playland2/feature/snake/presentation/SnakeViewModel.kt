@@ -1,7 +1,9 @@
-package com.example.playland2.feature.snake
+package com.example.playland2.feature.snake.presentation
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.playland2.feature.snake.domain.model.Direction
+import com.example.playland2.feature.snake.domain.model.Position
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -65,12 +67,9 @@ class SnakeViewModel : ViewModel() {
                 Direction.RIGHT -> Position(head.x + 1, head.y)
             }
 
-            if (newHead.x !in 0 until currentState.gridSize ||
-                newHead.y !in 0 until currentState.gridSize) {
-                return@update currentState.copy(isPlaying = false, isGameOver = true)
-            }
-
-            if (currentState.snake.contains(newHead)) {
+            if (newHead.x !in 0 until currentState.gridSize || 
+                newHead.y !in 0 until currentState.gridSize ||
+                currentState.snake.contains(newHead)) {
                 return@update currentState.copy(isPlaying = false, isGameOver = true)
             }
 
@@ -90,6 +89,7 @@ class SnakeViewModel : ViewModel() {
             }
         }
     }
+
     private fun generateFood(snake: List<Position>, gridSize: Int): Position {
         var newFood: Position
         do {

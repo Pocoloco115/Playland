@@ -1,4 +1,4 @@
-package com.example.playland2.feature.snake
+package com.example.playland2.feature.snake.ui
 
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -9,6 +9,7 @@ import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
 import coil.request.ImageRequest
 import coil.size.Size as CoilSize
+import com.example.playland2.feature.snake.presentation.SnakeGameState
 
 @Composable
 fun SnakeCanvas(
@@ -57,7 +58,6 @@ fun SnakeCanvas(
                 }
             }
         }
-
         translate(
             left = state.food.x * cellSize,
             top = state.food.y * cellSize
@@ -66,7 +66,6 @@ fun SnakeCanvas(
                 draw(size = Size(cellSize, cellSize))
             }
         }
-
         state.snake.forEachIndexed { index, pos ->
             val painter = if (index == 0) headPainter else bodyPainter
             translate(

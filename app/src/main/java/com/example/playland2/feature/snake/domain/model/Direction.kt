@@ -1,4 +1,4 @@
-package com.example.playland2.feature.snake
+package com.example.playland2.feature.snake.domain.model
 
 enum class Direction {
     UP, DOWN, LEFT, RIGHT;
