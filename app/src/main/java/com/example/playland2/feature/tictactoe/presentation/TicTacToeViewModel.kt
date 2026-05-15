@@ -1,63 +1,93 @@
 package com.example.playland2.feature.tictactoe.presentation
 
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import com.example.playland2.feature.tictactoe.domain.model.Player
-import com.example.playland2.feature.tictactoe.domain.model.TicTacToeCell
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 class TicTacToeViewModel : ViewModel() {
-    private val _uiState = MutableStateFlow(TicTacToeUiState())
-    val uiState: StateFlow<TicTacToeUiState> = _uiState.asStateFlow()
 
-    fun onCellClicked(index: Int) {
-        val currentState = _uiState.value.board
-        if (currentState.cells[index] is TicTacToeCell.Empty && currentState.winner == null && !currentState.isDraw) {
-            val newCells = currentState.cells.toMutableList()
-            newCells[index] = TicTacToeCell.Filled(currentState.currentPlayer)
-            
-            val winner = checkWinner(newCells)
-            val isDraw = winner == null && newCells.none { it is TicTacToeCell.Empty }
-            val nextPlayer = if (currentState.currentPlayer == Player.X) Player.O else Player.X
+    var state = mutableStateOf(TicTacToeGameState())
+        private set
 
-            _uiState.update { 
-                it.copy(
-                    board = currentState.copy(
-                        cells = newCells,
-                        currentPlayer = nextPlayer,
-                        winner = winner,
-                        isDraw = isDraw
-                    )
+    fun onCellClick(index: Int) {
+        val currentState = state.value
+
+        if (
+            currentState.board[index] != null ||
+            currentState.winner != null ||
+            currentState.isDraw
+        ) return
+
+        val newBoard = currentState.board.toMutableList()
+        newBoard[index] = currentState.currentPlayer
+
+        val winner = checkWinner(newBoard)
+        val draw = winner == null && newBoard.none { it == null }
+
+        state.value = when {
+            winner != null -> {
+                currentState.copy(
+                    board = newBoard,
+                    winner = winner,
+                    xWins = if (winner == Player.X) currentState.xWins + 1 else currentState.xWins,
+                    oWins = if (winner == Player.O) currentState.oWins + 1 else currentState.oWins
+                )
+            }
+
+            draw -> {
+                currentState.copy(
+                    board = newBoard,
+                    isDraw = true,
+                    draws = currentState.draws + 1
+                )
+            }
+
+            else -> {
+                currentState.copy(
+                    board = newBoard,
+                    currentPlayer = currentState.currentPlayer.next()
                 )
             }
         }
     }
 
     fun resetGame() {
-        _uiState.update { TicTacToeUiState() }
+        state.value = state.value.copy(
+            board = List(9) { null },
+            currentPlayer = Player.X,
+            winner = null,
+            isDraw = false
+        )
     }
 
-    private fun checkWinner(cells: List<TicTacToeCell>): Player? {
-        val winPatterns = listOf(
-            listOf(0, 1, 2), listOf(3, 4, 5), listOf(6, 7, 8), // Rows
-            listOf(0, 3, 6), listOf(1, 4, 7), listOf(2, 5, 8), // Columns
-            listOf(0, 4, 8), listOf(2, 4, 6)             // Diagonals
+    fun resetScore() {
+        state.value = TicTacToeGameState()
+    }
+
+    private fun checkWinner(board: List<Player?>): Player? {
+        val combinations = listOf(
+            listOf(0,1,2),
+            listOf(3,4,5),
+            listOf(6,7,8),
+            listOf(0,3,6),
+            listOf(1,4,7),
+            listOf(2,5,8),
+            listOf(0,4,8),
+            listOf(2,4,6)
         )
 
-        for (pattern in winPatterns) {
-            val (a, b, c) = pattern
-            val cellA = cells[a]
-            val cellB = cells[b]
-            val cellC = cells[c]
+        for (combo in combinations) {
+            val (a, b, c) = combo
 
-            if (cellA is TicTacToeCell.Filled && cellB is TicTacToeCell.Filled && cellC is TicTacToeCell.Filled) {
-                if (cellA.player == cellB.player && cellB.player == cellC.player) {
-                    return cellA.player
-                }
+            if (
+                board[a] != null &&
+                board[a] == board[b] &&
+                board[a] == board[c]
+            ) {
+                return board[a]
             }
         }
+
         return null
     }
 }
