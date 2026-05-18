@@ -19,18 +19,21 @@ fun CatchFoodNavHost(
         startDestination = CatchFoodMenu
     ) {
 
-        // MENU DE CATCH FOOD
+        // MENU
         composable<CatchFoodMenu> {
 
             CatchFoodScreen(
 
                 onBack = {
+
                     onBack()
                 },
 
                 onGoToGame = {
 
-                    navController.navigate(CatchFoodGameScreen)
+                    navController.navigate(
+                        CatchFoodGameScreen
+                    )
                 }
             )
         }
