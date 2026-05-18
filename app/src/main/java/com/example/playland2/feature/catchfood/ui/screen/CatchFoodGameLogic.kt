@@ -27,11 +27,14 @@ class CatchFoodGameLogic {
     // VENENO
     var poisonHits by mutableIntStateOf(0)
 
+    // COMIDAS PERDIDAS
+    var missedFood by mutableIntStateOf(0)
+
     // GAME OVER
     var isGameOver by mutableStateOf(false)
 
     // VELOCIDAD
-    var speed by mutableFloatStateOf(10f)
+    var speed by mutableFloatStateOf(8f)
 
     // PLAYER STATE
     var playerState by mutableStateOf("eat")
@@ -41,14 +44,14 @@ class CatchFoodGameLogic {
 
     init {
 
-        repeat(6) {
+        repeat(8) { index ->
 
-            spawnFood()
+            spawnFood(index)
         }
 
-        repeat(2) {
+        repeat(2) { index ->
 
-            spawnPoison()
+            spawnPoison(index)
         }
     }
 
@@ -56,38 +59,47 @@ class CatchFoodGameLogic {
 
         if (isGameOver) return
 
-        // AUMENTAR VELOCIDAD
-        speed += 0.002f
+        // AUMENTA VELOCIDAD
+        speed += 0.001f
 
         objects.forEach { obj ->
 
             obj.y += speed
 
-            // RESET OBJECT
-            if (obj.y > 2200f) {
+            // OBJETO PERDIDO
+            if (obj.y > 1900f) {
 
-                obj.y = -200f
-                obj.x = Random.nextInt(50, 900).toFloat()
+                if (!obj.isPoison) {
+
+                    missedFood++
+
+                    if (missedFood >= 5) {
+
+                        playerState = "dead"
+                        isGameOver = true
+                    }
+                }
+
+                resetObject(obj)
             }
 
-            // COLLISION
+            // HITBOX
             val distance = abs(playerX - obj.x)
 
+            // SOLO CUENTA SI TOCA AL CONEJO
             if (
-                obj.y > 1700 &&
-                distance < 140
+                obj.y > 1500 &&
+                obj.y < 1750 &&
+                distance < 220
             ) {
 
+                // VENENO
                 if (obj.isPoison) {
 
                     poisonHits++
 
                     playerState = "hurt"
 
-                    obj.y = -200f
-                    obj.x = Random.nextInt(50, 900).toFloat()
-
-                    // GAME OVER
                     if (poisonHits >= 3) {
 
                         playerState = "dead"
@@ -96,34 +108,49 @@ class CatchFoodGameLogic {
 
                 } else {
 
+                    // COMIDA
                     score++
-
-                    obj.y = -200f
-                    obj.x = Random.nextInt(50, 900).toFloat()
                 }
+
+                // DESAPARECE Y REAPARECE
+                resetObject(obj)
             }
         }
     }
 
-    private fun spawnFood() {
+    private fun resetObject(obj: FallingObject) {
+
+        obj.y = Random.nextInt(-3500, -500).toFloat()
+
+        obj.x = Random.nextInt(80, 850).toFloat()
+    }
+
+    private fun spawnFood(index: Int) {
 
         objects.add(
 
             FallingObject(
-                x = Random.nextInt(50, 900).toFloat(),
-                y = Random.nextInt(-1500, 0).toFloat(),
+
+                x = Random.nextInt(80, 850).toFloat(),
+
+                // UNO TRAS OTRO
+                y = (-500f * index),
+
                 isPoison = false
             )
         )
     }
 
-    private fun spawnPoison() {
+    private fun spawnPoison(index: Int) {
 
         objects.add(
 
             FallingObject(
-                x = Random.nextInt(50, 700).toFloat(),
-                y = Random.nextInt(-1500, 0).toFloat(),
+
+                x = Random.nextInt(80, 850).toFloat(),
+
+                y = (-3500f - (700f * index)),
+
                 isPoison = true
             )
         )
