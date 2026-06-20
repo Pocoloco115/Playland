@@ -25,12 +25,33 @@ fun MenuScreen(
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text(text = "PLAYLAND", style = MaterialTheme.typography.displayMedium)
+        Text(
+            text = "PLAYLAND",
+            style = MaterialTheme.typography.displayMedium
+        )
+
         Spacer(modifier = Modifier.height(32.dp))
 
-        Button(onClick = onNavigateToSnake){ Text("Snake") }
-        Button(onClick = onNavigateToFlappyBird) { Text("Flappy Bird") }
-        Button(onClick = onNavigateToCatchFood) { Text("Catch Food") }
-        Button(onClick = onNavigateToTicTacToe) { Text("Tic Tac Toe") }
+        Button(onClick = onNavigateToSnake) {
+            Text("Snake")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(onClick = onNavigateToFlappyBird) {
+            Text("Flappy Bird")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(onClick = onNavigateToCatchFood) {
+            Text("Catch Food")
+        }
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Button(onClick = onNavigateToTicTacToe) {
+            Text("Tic Tac Toe")
+        }
     }
 }
