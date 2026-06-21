@@ -1,4 +1,7 @@
-package com.example.playland2.feature.snake
+package com.example.playland2.feature.snake.presentation
+
+import com.example.playland2.feature.snake.domain.model.Direction
+import com.example.playland2.feature.snake.domain.model.Position
 
 data class SnakeGameState(
     val snake: List<Position> = listOf(Position(10, 10), Position(9, 10), Position(8, 10)),
