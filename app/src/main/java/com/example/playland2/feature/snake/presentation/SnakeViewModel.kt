@@ -17,6 +17,8 @@ class SnakeViewModel : ViewModel() {
     val state = _state.asStateFlow()
 
     private var gameJob: Job? = null
+    private var lastProcessedDirection: Direction = Direction.RIGHT
+    private var nextDirection: Direction = Direction.RIGHT
 
     fun toggleGame() {
         if (_state.value.isPlaying) {
@@ -34,7 +36,7 @@ class SnakeViewModel : ViewModel() {
         gameJob?.cancel()
         gameJob = viewModelScope.launch {
             while (_state.value.isPlaying) {
-                delay(150)
+                delay(120) // Un poco más rápido para mejor respuesta
                 moveSnake()
             }
         }
@@ -47,20 +49,23 @@ class SnakeViewModel : ViewModel() {
 
     fun resetGame() {
         _state.value = SnakeGameState()
+        lastProcessedDirection = Direction.RIGHT
+        nextDirection = Direction.RIGHT
         pauseGame()
     }
 
     fun changeDirection(newDirection: Direction) {
-        _state.update { 
-            if (it.direction.isOpposite(newDirection)) it 
-            else it.copy(direction = newDirection)
+        // Evitamos que cambie a la dirección opuesta de la que se está procesando actualmente
+        if (!lastProcessedDirection.isOpposite(newDirection)) {
+            nextDirection = newDirection
         }
     }
 
     private fun moveSnake() {
         _state.update { currentState ->
+            lastProcessedDirection = nextDirection
             val head = currentState.snake.first()
-            val newHead = when (currentState.direction) {
+            val newHead = when (lastProcessedDirection) {
                 Direction.UP -> Position(head.x, head.y - 1)
                 Direction.DOWN -> Position(head.x, head.y + 1)
                 Direction.LEFT -> Position(head.x - 1, head.y)
@@ -80,11 +85,13 @@ class SnakeViewModel : ViewModel() {
                 currentState.copy(
                     snake = newSnake,
                     food = newFood,
-                    score = currentState.score + 10
+                    score = currentState.score + 10,
+                    direction = lastProcessedDirection
                 )
             } else {
                 currentState.copy(
-                    snake = newSnake.dropLast(1)
+                    snake = newSnake.dropLast(1),
+                    direction = lastProcessedDirection
                 )
             }
         }

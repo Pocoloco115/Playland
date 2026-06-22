@@ -3,7 +3,9 @@ package com.example.playland2.feature.snake.ui
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.platform.LocalContext
 import coil.compose.rememberAsyncImagePainter
@@ -17,13 +19,6 @@ fun SnakeCanvas(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-
-    val gridPainter = rememberAsyncImagePainter(
-        model = ImageRequest.Builder(context)
-            .data("file:///android_asset/games/snake/grid_tile.png")
-            .size(CoilSize.ORIGINAL)
-            .build()
-    )
 
     val headPainter = rememberAsyncImagePainter(
         model = ImageRequest.Builder(context)
@@ -49,15 +44,23 @@ fun SnakeCanvas(
     Canvas(modifier = modifier) {
         val cellSize = size.width / state.gridSize
 
-        for (y in 0 until state.gridSize) {
-            for (x in 0 until state.gridSize) {
-                translate(left = x * cellSize, top = y * cellSize) {
-                    with(gridPainter) {
-                        draw(size = Size(cellSize, cellSize))
-                    }
-                }
-            }
+        drawRect(color = Color(0xFF1A1A1B))
+        
+        for (i in 0..state.gridSize) {
+            drawLine(
+                color = Color.White.copy(alpha = 0.05f),
+                start = Offset(i * cellSize, 0f),
+                end = Offset(i * cellSize, size.height),
+                strokeWidth = 1f
+            )
+            drawLine(
+                color = Color.White.copy(alpha = 0.05f),
+                start = Offset(0f, i * cellSize),
+                end = Offset(size.width, i * cellSize),
+                strokeWidth = 1f
+            )
         }
+
         translate(
             left = state.food.x * cellSize,
             top = state.food.y * cellSize
@@ -66,6 +69,7 @@ fun SnakeCanvas(
                 draw(size = Size(cellSize, cellSize))
             }
         }
+
         state.snake.forEachIndexed { index, pos ->
             val painter = if (index == 0) headPainter else bodyPainter
             translate(

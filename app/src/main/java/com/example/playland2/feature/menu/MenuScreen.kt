@@ -58,7 +58,7 @@ fun MenuScreen(
         ) {
             GameIconButton(
                 iconUrl = "file:///android_asset/icons/comer.png",
-                label = "Eat",
+                label = "Catch Food",
                 onClick = onNavigateToCatchFood
             )
             GameIconButton(
