@@ -6,6 +6,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.playland2.feature.catchfood.CatchFoodScreen
 import com.example.playland2.feature.catchfood.ui.screen.CatchFoodGame
+import com.example.playland2.feature.catchfood.ui.screen.CatchFoodLeaderboard
 
 @Composable
 fun CatchFoodNavHost(
@@ -19,7 +20,7 @@ fun CatchFoodNavHost(
         startDestination = CatchFoodMenu
     ) {
 
-        // MENU
+        // menu principal el del historico
         composable<CatchFoodMenu> {
 
             CatchFoodScreen(
@@ -34,11 +35,15 @@ fun CatchFoodNavHost(
                     navController.navigate(
                         CatchFoodGameScreen
                     )
+                },
+
+                onGoToLeaderboard = {
+                    navController.navigate(CatchFoodLeaderboardScreen)
                 }
             )
         }
 
-        // GAMEPLAY
+        // jueguito
         composable<CatchFoodGameScreen> {
 
             CatchFoodGame(
@@ -47,6 +52,12 @@ fun CatchFoodNavHost(
 
                     navController.popBackStack()
                 }
+            )
+        }
+
+        composable<CatchFoodLeaderboardScreen> {
+            CatchFoodLeaderboard(
+                onBack = { navController.popBackStack() }
             )
         }
     }

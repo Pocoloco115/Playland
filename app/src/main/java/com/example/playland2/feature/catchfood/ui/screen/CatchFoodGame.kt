@@ -1,6 +1,8 @@
 package com.example.playland2.feature.catchfood.ui.screen
 
+import android.content.Context
 import android.graphics.BitmapFactory
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -14,683 +16,322 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.playland2.R
-import kotlinx.coroutines.delay
-import kotlin.random.Random
 
 @Composable
-fun CatchFoodGame(
-    onBack: () -> Unit
-) {
-
+fun CatchFoodGame(onBack: () -> Unit) {
     val context = LocalContext.current
+    val density = LocalDensity.current.density
+    val gameViewModel: CatchFoodViewModel = viewModel()
+    val gameLogic = gameViewModel.gameLogic
+    val uiState = gameViewModel.uiState
 
-    val gameLogic = remember {
-
-        CatchFoodGameLogic()
+    val bitmaps = remember(context, density) {
+        CatchFoodBitmaps.load(context, density)
     }
 
-    var isPaused by remember {
-
-        mutableStateOf(false)
-    }
-
-    // GAME LOOP
-    LaunchedEffect(Unit) {
-
+    LaunchedEffect(gameViewModel) {
+        var previousFrameNanos = 0L
         while (true) {
-
-            if (!isPaused && !gameLogic.isGameOver) {
-
-                gameLogic.updateGame()
-            }
-
-            delay(16)
-        }
-    }
-
-    // FUENTE
-    val gameFont = FontFamily(
-
-        Font(R.font.fredoka_bold)
-    )
-
-    // PLAYER IMAGE
-    val playerBitmap = remember(gameLogic.playerState) {
-
-        try {
-
-            val imagePath = when (gameLogic.playerState) {
-
-                "hurt" -> "games/catchfood/sprites/enfermo.png"
-
-                "dead" -> "games/catchfood/sprites/muerto.png"
-
-                else -> "games/catchfood/sprites/comer.png"
-            }
-
-            context.assets.open(imagePath)
-                .use {
-
-                    BitmapFactory.decodeStream(it).asImageBitmap()
+            withFrameNanos { frameNanos ->
+                if (!gameViewModel.uiState.isPaused && !gameViewModel.uiState.isGameOver) {
+                    if (previousFrameNanos != 0L) {
+                        val deltaSeconds = (frameNanos - previousFrameNanos) / 1_000_000_000f
+                        gameViewModel.updateGame(deltaSeconds)
+                    }
+                    previousFrameNanos = frameNanos
+                } else {
+                    previousFrameNanos = 0L
                 }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // FOOD IMAGE
-    val foodBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/zanahoria.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
             }
-
-        } catch (e: Exception) {
-
-            null
         }
     }
 
-    // POISON IMAGE
-    val poisonBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/veneno.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // TITLE IMAGE
-    val imagenArriba = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/titulo.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // PAUSE IMAGE
-    val pauseBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/btn_pausa.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // CONTINUAR IMAGE
-    val continuarBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/btn_continuar.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // RESTART IMAGE
-    val restartBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/btn_reiniciar.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // VOLVER MENU IMAGE
-    val volverBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/btn_volver_menu_principal.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
-
-    // GAME OVER IMAGE
-    val gameOverBitmap = remember {
-
-        try {
-
-            context.assets.open(
-                "games/catchfood/sprites/screen_game_lost.png"
-            ).use {
-
-                BitmapFactory.decodeStream(it).asImageBitmap()
-            }
-
-        } catch (e: Exception) {
-
-            null
-        }
-    }
+    val gameFont = remember { FontFamily(Font(R.font.fredoka_bold)) }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
             .background(Color(0xFFFCF5E4))
     ) {
+        GameScene(
+            gameLogic = gameLogic,
+            onMovePlayer = gameViewModel::movePlayer,
+            onViewportHeightChanged = gameViewModel::setViewportHeight,
+            foodBitmap = bitmaps.food,
+            poisonBitmap = bitmaps.poison,
+            playerBitmap = when (uiState.playerState) {
+                "hurt" -> bitmaps.hurtPlayer
+                "dead" -> bitmaps.deadPlayer
+                else -> bitmaps.player
+            }
+        )
 
-        // TITULO
-        imagenArriba?.let { bitmap ->
-
+        bitmaps.title?.let {
             Image(
-                bitmap = bitmap,
+                bitmap = it,
                 contentDescription = null,
-
                 modifier = Modifier
                     .align(Alignment.TopCenter)
                     .offset(y = (-10).dp)
-                    .size(
-                        width = 300.dp,
-                        height = 180.dp
-                    ),
-
+                    .size(width = 300.dp, height = 180.dp),
                 contentScale = ContentScale.Fit
             )
         }
 
-        // CONTADORES
         Column(
-
             modifier = Modifier
                 .align(Alignment.TopStart)
-                .offset(
-                    x = 20.dp,
-                    y = 190.dp
-                )
+                .offset(x = 20.dp, y = 190.dp)
         ) {
-
-            Text(
-                text = "Comida: ${gameLogic.score}",
-                fontFamily = gameFont,
-                color = Color.Black
-            )
-
-            Text(
-                text = "Veneno: ${gameLogic.poisonHits}/3",
-                fontFamily = gameFont,
-                color = Color.Red
-            )
-
-            Text(
-                text = "Perdidas: ${gameLogic.missedFood}/5",
-                fontFamily = gameFont,
-                color = Color.DarkGray
-            )
+            Text("Comida: ${uiState.score}", fontFamily = gameFont, color = Color.Black)
+            Text("Veneno: ${uiState.poisonHits}/3", fontFamily = gameFont, color = Color.Red)
+            Text("Perdidas: ${uiState.missedFood}/5", fontFamily = gameFont, color = Color.DarkGray)
         }
 
-        // OBJECTOS
-        gameLogic.objects.forEach { obj ->
-
-            val bitmap = if (obj.isPoison) {
-
-                poisonBitmap
-
-            } else {
-
-                foodBitmap
-            }
-
-            bitmap?.let {
-
-                Image(
-                    bitmap = it,
-                    contentDescription = null,
-
-                    modifier = Modifier
-                        .offset(
-                            x = (obj.x / 3).dp,
-                            y = ((obj.y / 3) + 220).dp
-                        )
-                        .size(90.dp),
-
-                    contentScale = ContentScale.Fit
-                )
-            }
-        }
-
-        // PLAYER
-        playerBitmap?.let { bitmap ->
-
-            Image(
-                bitmap = bitmap,
-                contentDescription = null,
-
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(
-                        x = (gameLogic.playerX / 3).dp,
-                        y = (-40).dp
-                    )
-                    .size(170.dp)
-                    .pointerInput(Unit) {
-
-                        detectDragGestures { _, dragAmount ->
-
-                            gameLogic.playerX += dragAmount.x
-
-                            if (gameLogic.playerX < 0f) {
-
-                                gameLogic.playerX = 0f
-                            }
-
-                            if (gameLogic.playerX > 850f) {
-
-                                gameLogic.playerX = 850f
-                            }
-                        }
-                    },
-
-                contentScale = ContentScale.Fit
-            )
-        }
-
-        // PAUSE IMAGE
-        pauseBitmap?.let { bitmap ->
-
-            Image(
-                bitmap = bitmap,
-                contentDescription = null,
-
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .offset(y = 160.dp)
-                    .size(90.dp)
-            )
-        }
-
-        // PAUSE BUTTON
-        Button(
-            onClick = {
-
-                isPaused = true
-            },
-
+        ImageButton(
+            bitmap = bitmaps.pause,
+            onClick = gameViewModel::pause,
             modifier = Modifier
                 .align(Alignment.TopEnd)
                 .offset(y = 160.dp)
-                .size(90.dp),
+                .size(90.dp)
+        )
 
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color.Transparent
-            )
-        ) {
-        }
+        if (uiState.isGameOver) {
+            Box(Modifier.fillMaxSize().background(Color(0xFFFCF5E4)))
 
-        // GAME OVER SCREEN
-        if (gameLogic.isGameOver) {
-
-            Box(
-
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFFFCF5E4))
-            )
-
-            // GAME OVER IMAGE
-            gameOverBitmap?.let { bitmap ->
-
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = null,
-
+            bitmaps.gameOver?.let { gameOverBitmap ->
+                Box(
                     modifier = Modifier
                         .align(Alignment.Center)
                         .offset(y = (-60).dp)
-                        .size(
-                            width = 320.dp,
-                            height = 320.dp
-                        ),
-
-                    contentScale = ContentScale.Fit
-                )
-            }
-
-            // BOTON REINICIAR
-            Button(
-                onClick = {
-
-                    gameLogic.objects.clear()
-
-                    gameLogic.score = 0
-
-                    gameLogic.poisonHits = 0
-
-                    gameLogic.missedFood = 0
-
-                    gameLogic.speed = 8f
-
-                    gameLogic.playerState = "eat"
-
-                    gameLogic.isGameOver = false
-
-                    repeat(8) { index ->
-
-                        gameLogic.objects.add(
-
-                            FallingObject(
-
-                                x = Random.nextInt(
-                                    80,
-                                    850
-                                ).toFloat(),
-
-                                y = (-500f * index),
-
-                                isPoison = false
-                            )
-                        )
-                    }
-
-                    repeat(2) { index ->
-
-                        gameLogic.objects.add(
-
-                            FallingObject(
-
-                                x = Random.nextInt(
-                                    80,
-                                    850
-                                ).toFloat(),
-
-                                y = (-3500f - (700f * index)),
-
-                                isPoison = true
-                            )
-                        )
-                    }
-                },
-
-                modifier = Modifier
-                    .align(Alignment.BottomStart)
-                    .offset(
-                        x = 30.dp,
-                        y = (-70).dp
+                        .size(320.dp)
+                ) {
+                    Image(
+                        bitmap = gameOverBitmap,
+                        contentDescription = null,
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Fit
                     )
-                    .size(
-                        width = 150.dp,
-                        height = 90.dp
-                    ),
-
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                )
-            ) {
-            }
-
-            // BOTON MENU
-            Button(
-                onClick = {
-
-                    onBack()
-                },
-
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .offset(
-                        x = (-30).dp,
-                        y = (-70).dp
+                    TransparentButton(
+                        onClick = gameViewModel::restart,
+                        modifier = Modifier
+                            .offset(x = 12.dp, y = 190.dp)
+                            .size(width = 142.dp, height = 45.dp)
                     )
-                    .size(
-                        width = 150.dp,
-                        height = 90.dp
-                    ),
-
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color.Transparent
-                )
-            ) {
+                    TransparentButton(
+                        onClick = onBack,
+                        modifier = Modifier
+                            .offset(x = 167.dp, y = 190.dp)
+                            .size(width = 141.dp, height = 45.dp)
+                    )
+                }
             }
         }
 
-        // PAUSE MENU
-        if (isPaused) {
+        if (uiState.isPaused) {
+            Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)))
 
-            // FONDO OSCURO
-            Box(
-
+            ImageButton(
+                bitmap = bitmaps.continueButton,
+                onClick = gameViewModel::resume,
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(
-                        Color.Black.copy(alpha = 0.5f)
-                    )
+                    .align(Alignment.Center)
+                    .offset(y = (-90).dp)
+                    .size(width = 340.dp, height = 120.dp)
             )
-
-            // CONTINUAR
-            continuarBitmap?.let { bitmap ->
-
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = null,
-
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = (-90).dp)
-                        .size(
-                            width = 340.dp,
-                            height = 120.dp
-                        )
-                )
-
-                Button(
-                    onClick = {
-
-                        isPaused = false
-                    },
-
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = (-90).dp)
-                        .size(
-                            width = 340.dp,
-                            height = 120.dp
-                        ),
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    )
-                ) {
-                }
-            }
-
-            // REINICIAR
-            restartBitmap?.let { bitmap ->
-
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = null,
-
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = 10.dp)
-                        .size(
-                            width = 390.dp,
-                            height = 150.dp
-                        )
-                )
-
-                Button(
-                    onClick = {
-
-                        gameLogic.objects.clear()
-
-                        gameLogic.score = 0
-
-                        gameLogic.poisonHits = 0
-
-                        gameLogic.missedFood = 0
-
-                        gameLogic.speed = 8f
-
-                        gameLogic.playerState = "eat"
-
-                        gameLogic.isGameOver = false
-
-                        repeat(8) { index ->
-
-                            gameLogic.objects.add(
-
-                                FallingObject(
-
-                                    x = Random.nextInt(
-                                        80,
-                                        850
-                                    ).toFloat(),
-
-                                    y = (-500f * index),
-
-                                    isPoison = false
-                                )
-                            )
-                        }
-
-                        repeat(2) { index ->
-
-                            gameLogic.objects.add(
-
-                                FallingObject(
-
-                                    x = Random.nextInt(
-                                        80,
-                                        850
-                                    ).toFloat(),
-
-                                    y = (-3500f - (700f * index)),
-
-                                    isPoison = true
-                                )
-                            )
-                        }
-
-                        isPaused = false
-                    },
-
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = 10.dp)
-                        .size(
-                            width = 390.dp,
-                            height = 150.dp
-                        ),
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    )
-                ) {
-                }
-            }
-
-            // VOLVER MENU
-            volverBitmap?.let { bitmap ->
-
-                Image(
-                    bitmap = bitmap,
-                    contentDescription = null,
-
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = 110.dp)
-                        .size(
-                            width = 340.dp,
-                            height = 120.dp
-                        )
-                )
-
-                Button(
-                    onClick = {
-
-                        onBack()
-                    },
-
-                    modifier = Modifier
-                        .align(Alignment.Center)
-                        .offset(y = 110.dp)
-                        .size(
-                            width = 340.dp,
-                            height = 120.dp
-                        ),
-
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Color.Transparent
-                    )
-                ) {
-                }
-            }
+            ImageButton(
+                bitmap = bitmaps.restart,
+                onClick = gameViewModel::restart,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 10.dp)
+                    .size(width = 390.dp, height = 150.dp)
+            )
+            ImageButton(
+                bitmap = bitmaps.back,
+                onClick = onBack,
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .offset(y = 110.dp)
+                    .size(width = 340.dp, height = 120.dp)
+            )
         }
     }
 }
+
+@Composable
+private fun GameScene(
+    gameLogic: CatchFoodGameLogic,
+    onMovePlayer: (Float) -> Unit,
+    onViewportHeightChanged: (Float) -> Unit,
+    foodBitmap: ImageBitmap?,
+    poisonBitmap: ImageBitmap?,
+    playerBitmap: ImageBitmap?
+) {
+    val density = LocalDensity.current.density
+
+    Canvas(
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(gameLogic) {
+                detectDragGestures { _, dragAmount ->
+                    onMovePlayer(dragAmount.x)
+                }
+            }
+    ) {
+        gameLogic.frameVersion
+        onViewportHeightChanged(size.height / density)
+
+        val objectSize = (90f * density).toInt()
+        gameLogic.objects.forEach { obj ->
+            val bitmap = if (obj.isPoison) poisonBitmap else foodBitmap
+            bitmap?.let {
+                drawImage(
+                    image = it,
+                    dstOffset = IntOffset(
+                        x = ((obj.x / 3f) * density).toInt(),
+                        y = (((obj.y / 3f) + 220f) * density).toInt()
+                    ),
+                    dstSize = IntSize(objectSize, objectSize)
+                )
+            }
+        }
+
+        playerBitmap?.let {
+            val playerSize = (170f * density).toInt()
+            drawImage(
+                image = it,
+                dstOffset = IntOffset(
+                    x = ((gameLogic.playerX / 3f) * density).toInt(),
+                    y = size.height.toInt() - playerSize - (40f * density).toInt()
+                ),
+                dstSize = IntSize(playerSize, playerSize)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ImageButton(
+    bitmap: ImageBitmap?,
+    onClick: () -> Unit,
+    modifier: Modifier
+) {
+    Box(modifier) {
+        bitmap?.let {
+            Image(
+                bitmap = it,
+                contentDescription = null,
+                modifier = Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit
+            )
+        }
+        Button(
+            onClick = onClick,
+            modifier = Modifier.fillMaxSize(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent)
+        ) {}
+    }
+}
+
+@Composable
+private fun TransparentButton(
+    onClick: () -> Unit,
+    modifier: Modifier
+) {
+    Button(
+        onClick = onClick,
+        modifier = modifier,
+        colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+        contentPadding = androidx.compose.foundation.layout.PaddingValues(0.dp)
+    ) {}
+}
+
+private data class CatchFoodBitmaps(
+    val player: ImageBitmap?,
+    val hurtPlayer: ImageBitmap?,
+    val deadPlayer: ImageBitmap?,
+    val food: ImageBitmap?,
+    val poison: ImageBitmap?,
+    val title: ImageBitmap?,
+    val pause: ImageBitmap?,
+    val continueButton: ImageBitmap?,
+    val restart: ImageBitmap?,
+    val back: ImageBitmap?,
+    val gameOver: ImageBitmap?
+) {
+    companion object {
+        fun load(context: Context, density: Float): CatchFoodBitmaps {
+            fun load(path: String, widthDp: Int, heightDp: Int) =
+                decodeSampledAsset(context, path, widthDp * density, heightDp * density)
+
+            return CatchFoodBitmaps(
+                player = load("games/catchfood/sprites/comer.png", 170, 170),
+                hurtPlayer = load("games/catchfood/sprites/enfermo.png", 170, 170),
+                deadPlayer = load("games/catchfood/sprites/muerto.png", 170, 170),
+                food = load("games/catchfood/sprites/zanahoria.png", 90, 90),
+                poison = load("games/catchfood/sprites/veneno.png", 90, 90),
+                title = load("games/catchfood/sprites/titulo.png", 300, 180),
+                pause = load("games/catchfood/sprites/btn_pausa.png", 90, 90),
+                continueButton = load("games/catchfood/sprites/btn_continuar.png", 340, 120),
+                restart = load("games/catchfood/sprites/btn_reiniciar.png", 390, 150),
+                back = load("games/catchfood/sprites/btn_volver_menu_principal.png", 340, 120),
+                gameOver = load("games/catchfood/sprites/screen_game_lost.png", 320, 320)
+            )
+        }
+    }
+}
+
+private fun decodeSampledAsset(
+    context: Context,
+    path: String,
+    requestedWidthPx: Float,
+    requestedHeightPx: Float
+): ImageBitmap? = runCatching {
+    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
+    context.assets.open(path).use { BitmapFactory.decodeStream(it, null, bounds) }
+
+    // Images use ContentScale.Fit, so only the fitted rectangle needs full
+    // resolution (not both dimensions of a square destination).
+    val fitScale = minOf(
+        requestedWidthPx / bounds.outWidth,
+        requestedHeightPx / bounds.outHeight
+    )
+    val fittedWidth = bounds.outWidth * fitScale
+    val fittedHeight = bounds.outHeight * fitScale
+
+    var sampleSize = 1
+    while (
+        bounds.outWidth / (sampleSize * 2) >= fittedWidth &&
+        bounds.outHeight / (sampleSize * 2) >= fittedHeight
+    ) {
+        sampleSize *= 2
+    }
+
+    val options = BitmapFactory.Options().apply {
+        inSampleSize = sampleSize
+        inPreferredConfig = android.graphics.Bitmap.Config.ARGB_8888
+    }
+    context.assets.open(path).use { stream ->
+        requireNotNull(BitmapFactory.decodeStream(stream, null, options)).asImageBitmap()
+    }
+}.getOrNull()
