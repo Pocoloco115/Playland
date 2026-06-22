@@ -23,7 +23,11 @@ import androidx.compose.ui.unit.dp
 import com.example.playland2.feature.catchfood.ui.audio.CatchFoodAudioManager
 
 @Composable
-fun CatchFoodScreen(onBack: () -> Unit, onGoToGame: () -> Unit) {
+fun CatchFoodScreen(
+    onBack: () -> Unit,
+    onGoToGame: () -> Unit,
+    onGoToLeaderboard: () -> Unit
+) {
 
     val context = LocalContext.current
     val audioManager = remember { CatchFoodAudioManager(context) }
@@ -42,7 +46,7 @@ fun CatchFoodScreen(onBack: () -> Unit, onGoToGame: () -> Unit) {
 
         try {
 
-            context.assets.open("games/catchfood/sprites/background.png")
+            context.assets.open("games/catchfood/sprites/background_historico.png")
                 .use { inputStream ->
 
                     BitmapFactory.decodeStream(inputStream).asImageBitmap()
@@ -93,7 +97,7 @@ fun CatchFoodScreen(onBack: () -> Unit, onGoToGame: () -> Unit) {
         }
 
         Button(
-            onClick = { },
+            onClick = onGoToLeaderboard,
 
             modifier = Modifier
                 .align(Alignment.Center)

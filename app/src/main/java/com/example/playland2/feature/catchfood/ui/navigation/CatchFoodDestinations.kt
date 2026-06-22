@@ -7,3 +7,6 @@ object CatchFoodMenu
 
 @Serializable
 object CatchFoodGameScreen
+
+@Serializable
+object CatchFoodLeaderboardScreen
