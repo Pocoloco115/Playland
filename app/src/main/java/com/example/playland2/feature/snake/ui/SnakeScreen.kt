@@ -53,6 +53,12 @@ fun SnakeScreen(
             style = MaterialTheme.typography.titleLarge
         )
 
+        Text(
+            text = "Record: ${state.highScore}", 
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.secondary
+        )
+
         Spacer(modifier = Modifier.height(8.dp))
 
         SnakeCanvas(

@@ -1,7 +1,9 @@
 package com.example.playland2.feature.snake.presentation
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.playland2.feature.snake.data.SnakeRepository
 import com.example.playland2.feature.snake.domain.model.Direction
 import com.example.playland2.feature.snake.domain.model.Position
 import kotlinx.coroutines.Job
@@ -12,8 +14,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class SnakeViewModel : ViewModel() {
-    private val _state = MutableStateFlow(SnakeGameState())
+class SnakeViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = SnakeRepository(application)
+    
+    private val _state = MutableStateFlow(SnakeGameState(highScore = repository.getHighScore()))
     val state = _state.asStateFlow()
 
     private var gameJob: Job? = null
@@ -36,7 +40,7 @@ class SnakeViewModel : ViewModel() {
         gameJob?.cancel()
         gameJob = viewModelScope.launch {
             while (_state.value.isPlaying) {
-                delay(120) // Un poco más rápido para mejor respuesta
+                delay(120)
                 moveSnake()
             }
         }
@@ -48,14 +52,13 @@ class SnakeViewModel : ViewModel() {
     }
 
     fun resetGame() {
-        _state.value = SnakeGameState()
+        _state.value = SnakeGameState(highScore = repository.getHighScore())
         lastProcessedDirection = Direction.RIGHT
         nextDirection = Direction.RIGHT
         pauseGame()
     }
 
     fun changeDirection(newDirection: Direction) {
-        // Evitamos que cambie a la dirección opuesta de la que se está procesando actualmente
         if (!lastProcessedDirection.isOpposite(newDirection)) {
             nextDirection = newDirection
         }
@@ -75,17 +78,30 @@ class SnakeViewModel : ViewModel() {
             if (newHead.x !in 0 until currentState.gridSize || 
                 newHead.y !in 0 until currentState.gridSize ||
                 currentState.snake.contains(newHead)) {
-                return@update currentState.copy(isPlaying = false, isGameOver = true)
+                
+                // Game Over - Save High Score
+                repository.saveHighScore(currentState.score)
+                return@update currentState.copy(
+                    isPlaying = false, 
+                    isGameOver = true,
+                    highScore = repository.getHighScore()
+                )
             }
 
             val newSnake = mutableListOf(newHead) + currentState.snake
             
             if (newHead == currentState.food) {
+                val newScore = currentState.score + 10
                 val newFood = generateFood(newSnake, currentState.gridSize)
+                
+                // Update high score in real-time if current score exceeds it
+                val currentHigh = if (newScore > currentState.highScore) newScore else currentState.highScore
+                
                 currentState.copy(
                     snake = newSnake,
                     food = newFood,
-                    score = currentState.score + 10,
+                    score = newScore,
+                    highScore = currentHigh,
                     direction = lastProcessedDirection
                 )
             } else {

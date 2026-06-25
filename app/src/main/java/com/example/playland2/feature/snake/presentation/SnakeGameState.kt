@@ -8,6 +8,7 @@ data class SnakeGameState(
     val direction: Direction = Direction.RIGHT,
     val food: Position = Position(15, 15),
     val score: Int = 0,
+    val highScore: Int = 0,
     val isPlaying: Boolean = false,
     val isGameOver: Boolean = false,
     val gridSize: Int = 20
