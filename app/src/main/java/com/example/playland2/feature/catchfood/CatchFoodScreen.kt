@@ -46,7 +46,7 @@ fun CatchFoodScreen(
 
         try {
 
-            context.assets.open("games/catchfood/sprites/background_historico.png")
+            context.assets.open("games/catchfood/sprites/background_records.jpg")
                 .use { inputStream ->
 
                     BitmapFactory.decodeStream(inputStream).asImageBitmap()

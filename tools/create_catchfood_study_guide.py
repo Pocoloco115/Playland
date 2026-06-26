@@ -71,6 +71,12 @@ def set_repeat_table_header(row):
     tr_pr.append(tbl_header)
 
 
+def prevent_row_split(row):
+    tr_pr = row._tr.get_or_add_trPr()
+    cant_split = OxmlElement("w:cantSplit")
+    tr_pr.append(cant_split)
+
+
 def set_table_geometry(table, widths_inches):
     table.autofit = False
     table.alignment = WD_TABLE_ALIGNMENT.LEFT
@@ -96,6 +102,7 @@ def set_table_geometry(table, widths_inches):
         col.set(qn("w:w"), str(int(width * 1440)))
         grid.append(col)
     for row in table.rows:
+        prevent_row_split(row)
         for idx, cell in enumerate(row.cells):
             dxa = int(widths_inches[idx] * 1440)
             cell.width = Inches(widths_inches[idx])
@@ -214,9 +221,21 @@ def bullet(text):
     return p
 
 
+numbering_counter = 0
+
+
+def reset_numbering():
+    global numbering_counter
+    numbering_counter = 0
+
+
 def numbered(text):
-    p = doc.add_paragraph(style="List Number")
-    r = p.add_run(text)
+    global numbering_counter
+    numbering_counter += 1
+    p = doc.add_paragraph()
+    p.paragraph_format.left_indent = Inches(0.28)
+    p.paragraph_format.first_line_indent = Inches(-0.22)
+    r = p.add_run(f"{numbering_counter}.\t{text}")
     set_font(r)
     return p
 
@@ -302,6 +321,15 @@ def qa(question, short_answer, expanded=None):
         set_font(re, size=10, color=MUTED, italic=True)
 
 
+def normalize_page_breaks_and_numbering(document):
+    # Keep only the cover page break. Chapters then flow naturally, avoiding
+    # nearly-empty pages caused by a short section plus a forced break.
+    page_breaks = document._element.xpath('.//w:br[@w:type="page"]')
+    for br in page_breaks[1:]:
+        br.getparent().remove(br)
+
+
+
 # Cover
 add_title("CATCHFOOD", "Guía completa de código para defensa oral")
 para("De cero a una explicación técnica segura", bold_start="De cero", align=WD_ALIGN_PARAGRAPH.CENTER, after=16)
@@ -317,6 +345,7 @@ doc.add_page_break()
 # Study strategy
 doc.add_heading("Cómo estudiar esta guía hoy", level=1)
 callout("Regla principal:", "no memorices líneas completas. Memorizá responsabilidades y recorridos de datos.", LIGHT_YELLOW)
+reset_numbering()
 numbered("Leé primero el resumen de 90 segundos y repetilo en voz alta.")
 numbered("Aprendé el flujo: UI → ViewModel → GameLogic → UiState → UI → Room.")
 numbered("Estudiá el glosario de Kotlin y Compose. Ahí están lambda, callback, state, suspend y demás términos.")
@@ -449,6 +478,7 @@ bullet("Coordinación: CatchFoodNavHost y destinos.")
 callout("Frase de defensa:", "La UI no guarda directamente en SQLite ni implementa las reglas. Envía eventos al ViewModel, observa UiState y delega persistencia al Repository.", LIGHT_GREEN)
 
 doc.add_heading("Flujo de dependencias", level=2)
+reset_numbering()
 numbered("CatchFoodGame obtiene el ViewModel con `viewModel()`.")
 numbered("El ViewModel posee una instancia de CatchFoodGameLogic.")
 numbered("GameLogic actualiza el mundo del juego.")
@@ -1061,6 +1091,7 @@ doc.add_page_break()
 
 # Full flow
 doc.add_heading("18. Recorrido completo de una partida", level=1)
+reset_numbering()
 for item in [
     "El NavHost muestra CatchFoodMenu como destino inicial.",
     "CatchFoodScreen carga el fondo e inicia la música.",
@@ -1189,6 +1220,7 @@ callout("Delta time:", "tiempo real entre frames.", LIGHT_YELLOW)
 callout("AABB:", "superposición de rectángulos para colisiones.", LIGHT_YELLOW)
 
 doc.add_heading("Diez frases que tenés que memorizar", level=2)
+reset_numbering()
 for sentence in [
     "La UI envía eventos y observa estado; no ejecuta SQL.",
     "El ViewModel coordina el juego y sobrevive a recomposiciones.",
@@ -1209,5 +1241,6 @@ doc.core_properties.title = "Guía de defensa técnica - CatchFood"
 doc.core_properties.subject = "Kotlin, Jetpack Compose, ViewModel, Canvas y Room"
 doc.core_properties.author = "PlayLand"
 doc.core_properties.keywords = "CatchFood, Kotlin, Compose, ViewModel, Room, SQLite, defensa"
+normalize_page_breaks_and_numbering(doc)
 doc.save(DOCX_PATH)
 print(DOCX_PATH)
