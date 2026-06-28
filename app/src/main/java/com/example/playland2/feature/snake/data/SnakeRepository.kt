@@ -1,19 +1,17 @@
 package com.example.playland2.feature.snake.data
 
 import android.content.Context
-import android.content.SharedPreferences
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class SnakeRepository(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("snake_prefs", Context.MODE_PRIVATE)
+    private val dao = SnakeDatabase.getInstance(context).snakeScoreDao()
 
-    fun getHighScore(): Int {
-        return prefs.getInt("high_score", 0)
+    fun getHighScore(): Flow<Int> {
+        return dao.getHighScore().map { it?.highScore ?: 0 }
     }
 
-    fun saveHighScore(score: Int) {
-        val currentHigh = getHighScore()
-        if (score > currentHigh) {
-            prefs.edit().putInt("high_score", score).apply()
-        }
+    suspend fun saveHighScore(score: Int) {
+        dao.insertScore(SnakeScoreEntity(id = 1, highScore = score))
     }
 }

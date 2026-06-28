@@ -17,12 +17,20 @@ import kotlin.random.Random
 class SnakeViewModel(application: Application) : AndroidViewModel(application) {
     private val repository = SnakeRepository(application)
     
-    private val _state = MutableStateFlow(SnakeGameState(highScore = repository.getHighScore()))
+    private val _state = MutableStateFlow(SnakeGameState())
     val state = _state.asStateFlow()
 
     private var gameJob: Job? = null
     private var lastProcessedDirection: Direction = Direction.RIGHT
     private var nextDirection: Direction = Direction.RIGHT
+
+    init {
+        viewModelScope.launch {
+            repository.getHighScore().collect { high ->
+                _state.update { it.copy(highScore = high) }
+            }
+        }
+    }
 
     fun toggleGame() {
         if (_state.value.isPlaying) {
@@ -52,7 +60,9 @@ class SnakeViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun resetGame() {
-        _state.value = SnakeGameState(highScore = repository.getHighScore())
+        _state.update { currentState ->
+            SnakeGameState(highScore = currentState.highScore)
+        }
         lastProcessedDirection = Direction.RIGHT
         nextDirection = Direction.RIGHT
         pauseGame()
@@ -75,16 +85,19 @@ class SnakeViewModel(application: Application) : AndroidViewModel(application) {
                 Direction.RIGHT -> Position(head.x + 1, head.y)
             }
 
-            if (newHead.x !in 0 until currentState.gridSize || 
-                newHead.y !in 0 until currentState.gridSize ||
+            if ((newHead.x !in 0 until currentState.gridSize) || 
+                (newHead.y !in 0 until currentState.gridSize) ||
                 currentState.snake.contains(newHead)) {
                 
-                // Game Over - Save High Score
-                repository.saveHighScore(currentState.score)
+                if (currentState.score > currentState.highScore) {
+                    viewModelScope.launch {
+                        repository.saveHighScore(currentState.score)
+                    }
+                }
+                
                 return@update currentState.copy(
                     isPlaying = false, 
                     isGameOver = true,
-                    highScore = repository.getHighScore()
                 )
             }
 
@@ -94,7 +107,6 @@ class SnakeViewModel(application: Application) : AndroidViewModel(application) {
                 val newScore = currentState.score + 10
                 val newFood = generateFood(newSnake, currentState.gridSize)
                 
-                // Update high score in real-time if current score exceeds it
                 val currentHigh = if (newScore > currentState.highScore) newScore else currentState.highScore
                 
                 currentState.copy(
