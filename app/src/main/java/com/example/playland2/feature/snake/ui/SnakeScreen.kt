@@ -22,78 +22,90 @@ fun SnakeScreen(
 ) {
     val state by viewModel.state.collectAsState()
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .pointerInput(Unit) {
-                detectDragGestures(
-                    onDrag = { change, dragAmount ->
-                        change.consume()
-                        val (x, y) = dragAmount
-                        if (abs(x) > abs(y)) {
-                            if (x > 0) viewModel.changeDirection(Direction.RIGHT)
-                            else viewModel.changeDirection(Direction.LEFT)
-                        } else {
-                            if (y > 0) viewModel.changeDirection(Direction.DOWN)
-                            else viewModel.changeDirection(Direction.UP)
-                        }
-                    }
-                )
-            },
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Text(
-            text = "Snake", 
-            style = MaterialTheme.typography.headlineMedium, 
-            modifier = Modifier.padding(16.dp)
-        )
-
-        Text(
-            text = "Puntaje: ${state.score}", 
-            style = MaterialTheme.typography.titleLarge
-        )
-
-        Text(
-            text = "Record: ${state.highScore}", 
-            style = MaterialTheme.typography.titleMedium,
-            color = MaterialTheme.colorScheme.secondary
-        )
-
-        Spacer(modifier = Modifier.height(8.dp))
-
-        SnakeCanvas(
-            state = state,
-            modifier = Modifier.size(360.dp)
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        SnakeDirectionControls(
-            onDirectionChange = { newDir ->
-                viewModel.changeDirection(newDir)
-            }
-        )
-
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (state.isGameOver) {
-            Text(
-                text = "¡JUEGO TERMINADO!", 
-                color = MaterialTheme.colorScheme.error,
-                style = MaterialTheme.typography.headlineSmall
-            )
-            Spacer(modifier = Modifier.height(8.dp))
+    BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+        val availableWidth = maxWidth
+        val availableHeight = maxHeight
+        val canvasSize = if (availableWidth < availableHeight * 0.6f) {
+            availableWidth * 0.9f
+        } else {
+            availableHeight * 0.5f
         }
 
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            Button(onClick = { viewModel.toggleGame() }) { 
-                Text(if (state.isPlaying) "Pause" else "Play") 
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .pointerInput(Unit) {
+                    detectDragGestures(
+                        onDrag = { change, dragAmount ->
+                            change.consume()
+                            val (x, y) = dragAmount
+                            if (abs(x) > abs(y)) {
+                                if (x > 0) viewModel.changeDirection(Direction.RIGHT)
+                                else viewModel.changeDirection(Direction.LEFT)
+                            } else {
+                                if (y > 0) viewModel.changeDirection(Direction.DOWN)
+                                else viewModel.changeDirection(Direction.UP)
+                            }
+                        }
+                    )
+                },
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "Snake",
+                style = MaterialTheme.typography.headlineMedium,
+                modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Row(
+                modifier = Modifier.padding(8.dp),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Puntaje: ${state.score}",
+                    style = MaterialTheme.typography.titleMedium
+                )
+                Text(
+                    text = "Record: ${state.highScore}",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.secondary
+                )
             }
-            Button(onClick = { viewModel.resetGame() }) { 
-                Text("Restart") 
+
+            SnakeCanvas(
+                state = state,
+                modifier = Modifier.size(canvasSize)
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            SnakeDirectionControls(
+                onDirectionChange = { newDir ->
+                    viewModel.changeDirection(newDir)
+                }
+            )
+
+            if (state.isGameOver) {
+                Text(
+                    text = "¡JUEGO TERMINADO!",
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.headlineSmall
+                )
             }
-            Button(onClick = onBack) { 
-                Text("Volver") 
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Button(onClick = { viewModel.toggleGame() }) {
+                    Text(if (state.isPlaying) "Pause" else "Play")
+                }
+                Button(onClick = { viewModel.resetGame() }) {
+                    Text("Restart")
+                }
+                Button(onClick = onBack) {
+                    Text("Volver")
+                }
             }
         }
     }
