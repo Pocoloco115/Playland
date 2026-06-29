@@ -3,21 +3,32 @@ package com.example.playland2.feature.tictactoe.presentation
 import android.app.Application
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.AndroidViewModel
-import com.example.playland2.feature.tictactoe.data.TicTacToePreferences
+import androidx.lifecycle.viewModelScope
+import com.example.playland2.feature.tictactoe.data.TicTacToeDatabase
+import com.example.playland2.feature.tictactoe.data.TicTacToeScoreEntity
 import com.example.playland2.feature.tictactoe.domain.model.Player
+import kotlinx.coroutines.launch
 
 class TicTacToeViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val prefs = TicTacToePreferences(application)
+    private val dao = TicTacToeDatabase.getInstance(application).ticTacToeScoreDao()
 
-    var state = mutableStateOf(
-        TicTacToeGameState(
-            xWins = prefs.getXWins(),
-            oWins = prefs.getOWins(),
-            draws = prefs.getDraws()
-        )
-    )
+    var state = mutableStateOf(TicTacToeGameState())
         private set
+
+    init {
+        viewModelScope.launch {
+            dao.getScore().collect { entity ->
+                entity?.let {
+                    state.value = state.value.copy(
+                        xWins = it.xWins,
+                        oWins = it.oWins,
+                        draws = it.draws
+                    )
+                }
+            }
+        }
+    }
 
     fun onCellClick(index: Int) {
         val currentState = state.value
@@ -63,7 +74,15 @@ class TicTacToeViewModel(application: Application) : AndroidViewModel(applicatio
         state.value = newState
 
         if (winner != null || draw) {
-            prefs.saveScores(newState.xWins, newState.oWins, newState.draws)
+            viewModelScope.launch {
+                dao.insertScore(
+                    TicTacToeScoreEntity(
+                        xWins = newState.xWins,
+                        oWins = newState.oWins,
+                        draws = newState.draws
+                    )
+                )
+            }
         }
     }
 
@@ -77,8 +96,10 @@ class TicTacToeViewModel(application: Application) : AndroidViewModel(applicatio
     }
 
     fun resetScore() {
-        prefs.clearScores()
-        state.value = TicTacToeGameState()
+        viewModelScope.launch {
+            dao.clearScores()
+            state.value = TicTacToeGameState()
+        }
     }
 
     private fun checkWinner(board: List<Player?>): Player? {
