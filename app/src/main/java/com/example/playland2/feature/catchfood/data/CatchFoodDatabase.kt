@@ -17,14 +17,15 @@ abstract class CatchFoodDatabase : RoomDatabase() {
         @Volatile
         private var instance: CatchFoodDatabase? = null
 
+        //con esta funcion me traigo la bsd
         fun getInstance(context: Context): CatchFoodDatabase = instance ?: synchronized(this) {
             instance ?: Room.databaseBuilder(
                 context.applicationContext,
                 CatchFoodDatabase::class.java,
-                DATABASE_NAME
+                bsd_name
             ).build().also { instance = it }
         }
 
-        private const val DATABASE_NAME = "catch_food.db"
+        private const val bsd_name = "catch_food.db"
     }
 }

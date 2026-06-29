@@ -7,6 +7,7 @@ import androidx.room.Query
 
 @Dao
 interface CatchFoodScoreDao {
+    //aca inserto un registro nuevo
     @Insert
     suspend fun insert(score: CatchFoodScoreEntity)
 
@@ -18,5 +19,7 @@ interface CatchFoodScoreDao {
         LIMIT 10
         """
     )
+
+    //devuelvo enteros
     suspend fun getTopTenScores(): List<Int>
 }
