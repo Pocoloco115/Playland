@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -154,7 +155,7 @@ private fun GameMenuButton(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(
-            text = label,
+            text = game.title,
             style = MaterialTheme.typography.labelLarge
         )
     }
