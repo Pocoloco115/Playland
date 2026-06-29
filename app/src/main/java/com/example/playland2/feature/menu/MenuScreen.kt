@@ -152,6 +152,11 @@ private fun GameMenuButton(
                 color = game.color
             )
         }
+        Spacer(modifier = Modifier.height(8.dp))
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge
+        )
     }
 }
 

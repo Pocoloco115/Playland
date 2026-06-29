@@ -1,12 +1,22 @@
 package com.example.playland2.feature.tictactoe.presentation
 
+import android.app.Application
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.AndroidViewModel
+import com.example.playland2.feature.tictactoe.data.TicTacToePreferences
 import com.example.playland2.feature.tictactoe.domain.model.Player
 
-class TicTacToeViewModel : ViewModel() {
+class TicTacToeViewModel(application: Application) : AndroidViewModel(application) {
 
-    var state = mutableStateOf(TicTacToeGameState())
+    private val prefs = TicTacToePreferences(application)
+
+    var state = mutableStateOf(
+        TicTacToeGameState(
+            xWins = prefs.getXWins(),
+            oWins = prefs.getOWins(),
+            draws = prefs.getDraws()
+        )
+    )
         private set
 
     fun onCellClick(index: Int) {
@@ -24,7 +34,7 @@ class TicTacToeViewModel : ViewModel() {
         val winner = checkWinner(newBoard)
         val draw = winner == null && newBoard.none { it == null }
 
-        state.value = when {
+        val newState = when {
             winner != null -> {
                 currentState.copy(
                     board = newBoard,
@@ -49,6 +59,12 @@ class TicTacToeViewModel : ViewModel() {
                 )
             }
         }
+        
+        state.value = newState
+
+        if (winner != null || draw) {
+            prefs.saveScores(newState.xWins, newState.oWins, newState.draws)
+        }
     }
 
     fun resetGame() {
@@ -61,6 +77,7 @@ class TicTacToeViewModel : ViewModel() {
     }
 
     fun resetScore() {
+        prefs.clearScores()
         state.value = TicTacToeGameState()
     }
 

@@ -1,7 +1,9 @@
 package com.example.playland2.feature.snake.presentation
 
-import androidx.lifecycle.ViewModel
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.playland2.feature.snake.data.SnakeRepository
 import com.example.playland2.feature.snake.domain.model.Direction
 import com.example.playland2.feature.snake.domain.model.Position
 import kotlinx.coroutines.Job
@@ -12,11 +14,23 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.random.Random
 
-class SnakeViewModel : ViewModel() {
+class SnakeViewModel(application: Application) : AndroidViewModel(application) {
+    private val repository = SnakeRepository(application)
+    
     private val _state = MutableStateFlow(SnakeGameState())
     val state = _state.asStateFlow()
 
     private var gameJob: Job? = null
+    private var lastProcessedDirection: Direction = Direction.RIGHT
+    private var nextDirection: Direction = Direction.RIGHT
+
+    init {
+        viewModelScope.launch {
+            repository.getHighScore().collect { high ->
+                _state.update { it.copy(highScore = high) }
+            }
+        }
+    }
 
     fun toggleGame() {
         if (_state.value.isPlaying) {
@@ -34,7 +48,7 @@ class SnakeViewModel : ViewModel() {
         gameJob?.cancel()
         gameJob = viewModelScope.launch {
             while (_state.value.isPlaying) {
-                delay(150)
+                delay(120)
                 moveSnake()
             }
         }
@@ -46,45 +60,66 @@ class SnakeViewModel : ViewModel() {
     }
 
     fun resetGame() {
-        _state.value = SnakeGameState()
+        _state.update { currentState ->
+            SnakeGameState(highScore = currentState.highScore)
+        }
+        lastProcessedDirection = Direction.RIGHT
+        nextDirection = Direction.RIGHT
         pauseGame()
     }
 
     fun changeDirection(newDirection: Direction) {
-        _state.update { 
-            if (it.direction.isOpposite(newDirection)) it 
-            else it.copy(direction = newDirection)
+        if (!lastProcessedDirection.isOpposite(newDirection)) {
+            nextDirection = newDirection
         }
     }
 
     private fun moveSnake() {
         _state.update { currentState ->
+            lastProcessedDirection = nextDirection
             val head = currentState.snake.first()
-            val newHead = when (currentState.direction) {
+            val newHead = when (lastProcessedDirection) {
                 Direction.UP -> Position(head.x, head.y - 1)
                 Direction.DOWN -> Position(head.x, head.y + 1)
                 Direction.LEFT -> Position(head.x - 1, head.y)
                 Direction.RIGHT -> Position(head.x + 1, head.y)
             }
 
-            if (newHead.x !in 0 until currentState.gridSize || 
-                newHead.y !in 0 until currentState.gridSize ||
+            if ((newHead.x !in 0 until currentState.gridSize) || 
+                (newHead.y !in 0 until currentState.gridSize) ||
                 currentState.snake.contains(newHead)) {
-                return@update currentState.copy(isPlaying = false, isGameOver = true)
+                
+                if (currentState.score > currentState.highScore) {
+                    viewModelScope.launch {
+                        repository.saveHighScore(currentState.score)
+                    }
+                }
+                
+                return@update currentState.copy(
+                    isPlaying = false, 
+                    isGameOver = true,
+                )
             }
 
             val newSnake = mutableListOf(newHead) + currentState.snake
             
             if (newHead == currentState.food) {
+                val newScore = currentState.score + 10
                 val newFood = generateFood(newSnake, currentState.gridSize)
+                
+                val currentHigh = if (newScore > currentState.highScore) newScore else currentState.highScore
+                
                 currentState.copy(
                     snake = newSnake,
                     food = newFood,
-                    score = currentState.score + 10
+                    score = newScore,
+                    highScore = currentHigh,
+                    direction = lastProcessedDirection
                 )
             } else {
                 currentState.copy(
-                    snake = newSnake.dropLast(1)
+                    snake = newSnake.dropLast(1),
+                    direction = lastProcessedDirection
                 )
             }
         }

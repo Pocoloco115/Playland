@@ -1,5 +1,6 @@
 package com.example.playland2.feature.snake.ui
 
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -7,9 +8,12 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.playland2.feature.snake.domain.model.Direction
 import com.example.playland2.feature.snake.presentation.SnakeViewModel
+import kotlin.math.abs
 
 @Composable
 fun SnakeScreen(
@@ -19,7 +23,23 @@ fun SnakeScreen(
     val state by viewModel.state.collectAsState()
 
     Column(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .pointerInput(Unit) {
+                detectDragGestures(
+                    onDrag = { change, dragAmount ->
+                        change.consume()
+                        val (x, y) = dragAmount
+                        if (abs(x) > abs(y)) {
+                            if (x > 0) viewModel.changeDirection(Direction.RIGHT)
+                            else viewModel.changeDirection(Direction.LEFT)
+                        } else {
+                            if (y > 0) viewModel.changeDirection(Direction.DOWN)
+                            else viewModel.changeDirection(Direction.UP)
+                        }
+                    }
+                )
+            },
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Text(
@@ -31,6 +51,12 @@ fun SnakeScreen(
         Text(
             text = "Puntaje: ${state.score}", 
             style = MaterialTheme.typography.titleLarge
+        )
+
+        Text(
+            text = "Record: ${state.highScore}", 
+            style = MaterialTheme.typography.titleMedium,
+            color = MaterialTheme.colorScheme.secondary
         )
 
         Spacer(modifier = Modifier.height(8.dp))
