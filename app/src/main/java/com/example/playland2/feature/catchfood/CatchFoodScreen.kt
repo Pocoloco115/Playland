@@ -9,9 +9,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -20,7 +18,6 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
-import com.example.playland2.feature.catchfood.ui.audio.CatchFoodAudioManager
 
 @Composable
 fun CatchFoodScreen(
@@ -30,23 +27,12 @@ fun CatchFoodScreen(
 ) {
 
     val context = LocalContext.current
-    val audioManager = remember { CatchFoodAudioManager(context) }
-
-    // LifeCycle de married life
-    DisposableEffect(Unit) {
-
-        audioManager.startMusic()
-
-        onDispose {
-            audioManager.stopMusic()
-        }
-    }
 
     val fondoCompleto = remember {
 
         try {
 
-            context.assets.open("games/catchfood/sprites/background_historico.png")
+            context.assets.open("games/catchfood/sprites/background_records.jpg")
                 .use { inputStream ->
 
                     BitmapFactory.decodeStream(inputStream).asImageBitmap()

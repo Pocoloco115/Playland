@@ -7,13 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import kotlin.random.Random
 
-data class FallingObject(
-
-    var x: Float,
-    var y: Float,
-    val isPoison: Boolean
-)
-
 class CatchFoodGameLogic {
 
     var playerX by mutableFloatStateOf(300f)
@@ -21,10 +14,10 @@ class CatchFoodGameLogic {
     var poisonHits by mutableIntStateOf(0)
     var missedFood by mutableIntStateOf(0)
     var isGameOver by mutableStateOf(false)
-    var speed = INITIAL_SPEED
+    var speed = velocidadInicial
         private set
     var playerState by mutableStateOf("eat")
-    val objects = ArrayList<FallingObject>(OBJECT_COUNT)
+    val objects = ArrayList<FallingObject>(cantidadObjetos)
     var frameVersion by mutableIntStateOf(0)
         private set
     private var viewportHeightDp = 0f
@@ -38,27 +31,27 @@ class CatchFoodGameLogic {
         if (isGameOver) return
 
         // aqui incremento la velocidad
-        val frameScale = (deltaSeconds * TARGET_FPS).coerceIn(0f, MAX_FRAME_SCALE)
-        speed += SPEED_INCREASE_PER_FRAME * frameScale
+        val escalaDelFrame = (deltaSeconds * fpsObjetivo).coerceIn(0f, escalaMaximaFrame)
+        speed += aumentoVelocidadPorFrame * escalaDelFrame
 
         objects.forEach { obj ->
 
-            obj.y += speed * frameScale
+            obj.y += speed * escalaDelFrame
 
-            val objectLeft = obj.x / WORLD_SCALE + OBJECT_HITBOX_INSET_X_DP
-            val objectTop = obj.y / WORLD_SCALE + OBJECT_TOP_OFFSET_DP
-            val playerLeft = playerX / WORLD_SCALE + PLAYER_HITBOX_INSET_X_DP
-            val playerTop = viewportHeightDp - PLAYER_SIZE_DP - PLAYER_BOTTOM_OFFSET_DP +
-                PLAYER_HITBOX_INSET_TOP_DP
+            val izquierdaObjeto = obj.x / escalaMundo + margenXHitboxObjetoDp
+            val arribaObjeto = obj.y / escalaMundo + distanciaSuperiorObjetoDp
+            val izquierdaJugador = playerX / escalaMundo + margenXHitboxJugadorDp
+            val arribaJugador = viewportHeightDp - tamanoJugadorDp - distanciaInferiorJugadorDp +
+                margenSuperiorHitboxJugadorDp
 
             // collision
-            val touchesPlayer = viewportHeightDp > 0f &&
-                objectLeft < playerLeft + PLAYER_HITBOX_WIDTH_DP &&
-                objectLeft + OBJECT_HITBOX_WIDTH_DP > playerLeft &&
-                objectTop + OBJECT_HITBOX_INSET_TOP_DP < playerTop + PLAYER_HITBOX_HEIGHT_DP &&
-                objectTop + OBJECT_HITBOX_INSET_TOP_DP + OBJECT_HITBOX_HEIGHT_DP > playerTop
+            val tocaJugador = viewportHeightDp > 0f &&
+                izquierdaObjeto < izquierdaJugador + anchoHitboxJugadorDp &&
+                izquierdaObjeto + anchoHitboxObjetoDp > izquierdaJugador &&
+                arribaObjeto + margenSuperiorHitboxObjetoDp < arribaJugador + altoHitboxJugadorDp &&
+                arribaObjeto + margenSuperiorHitboxObjetoDp + altoHitboxObjetoDp > arribaJugador
 
-            if (touchesPlayer) {
+            if (tocaJugador) {
                 if (obj.isPoison) {
                     poisonHits++
                     playerState = "hurt"
@@ -76,7 +69,7 @@ class CatchFoodGameLogic {
             }
 
             // objeto perdido
-            if (viewportHeightDp > 0f && objectTop > viewportHeightDp) {
+            if (viewportHeightDp > 0f && arribaObjeto > viewportHeightDp) {
 
                 if (!obj.isPoison) {
 
@@ -97,7 +90,7 @@ class CatchFoodGameLogic {
     }
 
     fun movePlayer(deltaX: Float) {
-        playerX = (playerX + deltaX).coerceIn(0f, MAX_PLAYER_X)
+        playerX = (playerX + deltaX).coerceIn(0f, posicionMaximaJugadorX)
     }
 
     fun setViewportHeight(heightDp: Float) {
@@ -110,7 +103,7 @@ class CatchFoodGameLogic {
         score = 0
         poisonHits = 0
         missedFood = 0
-        speed = INITIAL_SPEED
+        speed = velocidadInicial
         playerState = "eat"
         isGameOver = false
 
@@ -119,23 +112,23 @@ class CatchFoodGameLogic {
     }
 
     private fun resetObject(obj: FallingObject) {
-        val objectBehindQueue = objects
+        val objetoMasArribaEnCola = objects
             .asSequence()
             .filter { it !== obj }
             .minOfOrNull { it.y }
-            ?: INITIAL_SPAWN_Y
+            ?: posicionInicialAparicionY
 
-        obj.y = minOf(objectBehindQueue - SPAWN_SPACING_WORLD, INITIAL_SPAWN_Y)
+        obj.y = minOf(objetoMasArribaEnCola - separacionAparicionMundo, posicionInicialAparicionY)
         obj.x = Random.nextInt(80, 850).toFloat()
     }
 
     private fun createObjects() {
-        val objectTypes = (List(8) { false } + List(2) { true }).shuffled()
-        objectTypes.forEachIndexed { index, isPoison ->
+        val tiposDeObjeto = (List(8) { false } + List(2) { true }).shuffled()
+        tiposDeObjeto.forEachIndexed { index, isPoison ->
             objects.add(
                 FallingObject(
                     x = Random.nextInt(80, 850).toFloat(),
-                    y = INITIAL_SPAWN_Y - (SPAWN_SPACING_WORLD * index),
+                    y = posicionInicialAparicionY - (separacionAparicionMundo * index),
                     isPoison = isPoison
                 )
             )
@@ -143,26 +136,25 @@ class CatchFoodGameLogic {
     }
 
     private companion object {
-        const val TARGET_FPS = 60f
-        const val MAX_FRAME_SCALE = 3f
-        const val SPEED_INCREASE_PER_FRAME = 0.001f
-        const val INITIAL_SPEED = 8f
-        const val MAX_PLAYER_X = 850f
-        const val OBJECT_COUNT = 10
-        const val WORLD_SCALE = 3f
-        const val OBJECT_TOP_OFFSET_DP = 220f
-        const val OBJECT_SIZE_DP = 90f
-        const val PLAYER_SIZE_DP = 170f
-        const val PLAYER_BOTTOM_OFFSET_DP = 40f
-        const val INITIAL_SPAWN_Y = -500f
-        const val SPAWN_SPACING_WORLD = 650f
-        const val PLAYER_HITBOX_INSET_X_DP = 45f
-        const val PLAYER_HITBOX_INSET_TOP_DP = 50f
-        const val PLAYER_HITBOX_WIDTH_DP = 80f
-        const val PLAYER_HITBOX_HEIGHT_DP = 75f
-        const val OBJECT_HITBOX_INSET_X_DP = 18f
-        const val OBJECT_HITBOX_INSET_TOP_DP = 12f
-        const val OBJECT_HITBOX_WIDTH_DP = 54f
-        const val OBJECT_HITBOX_HEIGHT_DP = 66f
+        const val fpsObjetivo = 60f
+        const val escalaMaximaFrame = 3f
+        const val aumentoVelocidadPorFrame = 0.001f
+        const val velocidadInicial = 8f
+        const val posicionMaximaJugadorX = 850f
+        const val cantidadObjetos = 10
+        const val escalaMundo = 3f
+        const val distanciaSuperiorObjetoDp = 220f
+        const val tamanoJugadorDp = 170f
+        const val distanciaInferiorJugadorDp = 40f
+        const val posicionInicialAparicionY = -500f
+        const val separacionAparicionMundo = 650f
+        const val margenXHitboxJugadorDp = 45f
+        const val margenSuperiorHitboxJugadorDp = 50f
+        const val anchoHitboxJugadorDp = 80f
+        const val altoHitboxJugadorDp = 75f
+        const val margenXHitboxObjetoDp = 18f
+        const val margenSuperiorHitboxObjetoDp = 12f
+        const val anchoHitboxObjetoDp = 54f
+        const val altoHitboxObjetoDp = 66f
     }
 }
