@@ -89,12 +89,6 @@ class SnakeViewModel(application: Application) : AndroidViewModel(application) {
                 (newHead.y !in 0 until currentState.gridSize) ||
                 currentState.snake.contains(newHead)) {
                 
-                if (currentState.score > currentState.highScore) {
-                    viewModelScope.launch {
-                        repository.saveHighScore(currentState.score)
-                    }
-                }
-                
                 return@update currentState.copy(
                     isPlaying = false, 
                     isGameOver = true,
@@ -107,7 +101,14 @@ class SnakeViewModel(application: Application) : AndroidViewModel(application) {
                 val newScore = currentState.score + 10
                 val newFood = generateFood(newSnake, currentState.gridSize)
                 
-                val currentHigh = if (newScore > currentState.highScore) newScore else currentState.highScore
+                val isNewRecord = newScore > currentState.highScore
+                val currentHigh = if (isNewRecord) newScore else currentState.highScore
+                
+                if (isNewRecord) {
+                    viewModelScope.launch {
+                        repository.saveHighScore(newScore)
+                    }
+                }
                 
                 currentState.copy(
                     snake = newSnake,
